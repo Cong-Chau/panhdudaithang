@@ -28,7 +28,7 @@ function Bot({ cool }: { cool: boolean }) {
 export default function App() {
   const sound = useSoundEffects();
   const [hidden, setHidden] = useState(document.hidden);
-  const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [reduced, setReduced] = useState(false);
   const [message, setMessage] = useState('');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [cool, setCool] = useState(false);
@@ -40,45 +40,23 @@ export default function App() {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updateMotion = () => { setReduced(media.matches); if (media.matches) setParticles([]); };
     const updateVisibility = () => { setHidden(document.hidden); if (document.hidden) { clearTimers(); setParticles([]); setMessage(''); } };
-    if (typeof media.addEventListener === 'function') media.addEventListener('change', updateMotion);
-    else media.addListener(updateMotion);
-    document.addEventListener('visibilitychange', updateVisibility);
-    window.addEventListener('pageshow', updateVisibility);
-    window.addEventListener('focus', updateVisibility);
-    // The email browser may become visible between render and listener setup.
-    updateMotion(); updateVisibility();
-    return () => {
-      clearTimers();
-      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', updateMotion);
-      else media.removeListener(updateMotion);
-      document.removeEventListener('visibilitychange', updateVisibility);
-      window.removeEventListener('pageshow', updateVisibility);
-      window.removeEventListener('focus', updateVisibility);
-    };
+    updateMotion(); media.addEventListener('change', updateMotion); document.addEventListener('visibilitychange', updateVisibility);
+    return () => { clearTimers(); media.removeEventListener('change', updateMotion); document.removeEventListener('visibilitychange', updateVisibility); };
   }, []);
   function announce(text: string) {
-    // A real tap also repairs stale visibility state after an iOS app switch.
-    setHidden(document.hidden);
     clearTimers(); setParticles([]); setMessage(text);
     timers.current.push(setTimeout(() => setMessage(''), 3800));
   }
   function burst(event: MouseEvent<HTMLButtonElement>, text: string, effect: SoundEffect) {
     sound.play(effect);
     announce(text);
-    if (document.hidden) return;
+    if (reduced || hidden) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.detail === 0 ? rect.left + rect.width / 2 : event.clientX;
     const y = event.detail === 0 ? rect.top + rect.height / 2 : event.clientY;
-    const count = reduced ? 12 : window.innerWidth < 600 ? 28 : 44;
-    setParticles(Array.from({ length: count }, (_, i) => ({
-      x: reduced ? Math.max(12, Math.min(window.innerWidth - 12, x + (Math.random() - .5) * 220)) : x,
-      y: reduced ? Math.max(12, Math.min(window.innerHeight - 12, y + (Math.random() - .5) * 140)) : y,
-      dx: reduced ? 0 : (Math.random() - .5) * 380,
-      dy: reduced ? 0 : -100 - Math.random() * 240,
-      rotation: Math.random() * 700 - 350,
-      color: ['#7138ED', '#FF7150', '#D4F46A', '#FFD33E', '#FF9EC8'][i % 5],
-    })));
-    timers.current.push(setTimeout(() => setParticles([]), reduced ? 750 : 1100));
+    const count = window.innerWidth < 600 ? 28 : 44;
+    setParticles(Array.from({ length: count }, (_, i) => ({ x, y, dx: (Math.random() - .5) * 380, dy: -100 - Math.random() * 240, rotation: Math.random() * 700 - 350, color: ['#7138ED', '#FF7150', '#D4F46A', '#FFD33E', '#FF9EC8'][i % 5] })));
+    timers.current.push(setTimeout(() => setParticles([]), 1100));
   }
   function praise() {
     sound.play('trophy');

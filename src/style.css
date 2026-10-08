@@ -82,12 +82,3 @@ footer{padding:0;min-height:18px;flex-shrink:0}footer p{font-size:10px;margin:0;
 .brand-name{font-size:16px;font-weight:900;white-space:nowrap}
 .brand-name .brand-dot{margin-left:1px;color:#7138ed}
 @media(max-width:430px){.brand-mark{width:29px;height:29px}.brand-name{font-size:14px}.brand{gap:7px}}
-
-/* Reduced motion keeps a gentle celebration instead of making the whole card inert. */
-@keyframes gentle-celebration{0%,100%{opacity:1}50%{opacity:.8}}
-@keyframes gentle-confetti{from{opacity:.9}to{opacity:0}}
-.reduce-motion .customer-photo,.reduce-motion .trophy-button svg{animation:gentle-celebration 4s ease-in-out infinite!important}
-.reduce-motion .trophy-button svg{animation-delay:1s!important}
-.reduce-motion .confetti-layer i{animation:gentle-confetti .65s ease-out both!important}
-.reduce-motion .trophy-button:hover,.reduce-motion .trophy-button:active{transform:none}
-.page.is-paused .customer-photo,.page.is-paused .trophy-button svg,.page.is-paused .confetti-layer i{animation-play-state:paused!important}
