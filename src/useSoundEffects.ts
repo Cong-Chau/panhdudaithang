@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-export type SoundEffect = 'celebrate' | 'cheer' | 'yay' | 'trophy' | 'bot';
+export type SoundEffect = 'cheer' | 'yay' | 'trophy' | 'bot';
 type Note = { frequency: number; at: number; duration: number; volume: number; type?: OscillatorType; endFrequency?: number };
 const sounds: Record<Exclude<SoundEffect, 'yay' | 'cheer'>, Note[]> = {
-  celebrate: [523, 659, 784, 1047].map((frequency, i) => ({ frequency, at: i * .11, duration: i === 3 ? .35 : .16, volume: .085, type: 'triangle' })),
   trophy: [{ frequency: 1047, at: 0, duration: .35, volume: .07 }, { frequency: 1568, at: .1, duration: .4, volume: .045 }],
   bot: [440, 880, 660, 1320].map((frequency, i) => ({ frequency, at: i * .085, duration: .09, volume: .06, type: 'square', endFrequency: frequency * 1.1 })),
 };

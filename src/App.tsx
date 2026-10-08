@@ -27,9 +27,8 @@ function Bot({ cool }: { cool: boolean }) {
 
 export default function App() {
   const sound = useSoundEffects();
-  const [replay, setReplay] = useState(0);
   const [hidden, setHidden] = useState(document.hidden);
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [message, setMessage] = useState('');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [cool, setCool] = useState(false);
@@ -41,23 +40,45 @@ export default function App() {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updateMotion = () => { setReduced(media.matches); if (media.matches) setParticles([]); };
     const updateVisibility = () => { setHidden(document.hidden); if (document.hidden) { clearTimers(); setParticles([]); setMessage(''); } };
-    updateMotion(); media.addEventListener('change', updateMotion); document.addEventListener('visibilitychange', updateVisibility);
-    return () => { clearTimers(); media.removeEventListener('change', updateMotion); document.removeEventListener('visibilitychange', updateVisibility); };
+    if (typeof media.addEventListener === 'function') media.addEventListener('change', updateMotion);
+    else media.addListener(updateMotion);
+    document.addEventListener('visibilitychange', updateVisibility);
+    window.addEventListener('pageshow', updateVisibility);
+    window.addEventListener('focus', updateVisibility);
+    // The email browser may become visible between render and listener setup.
+    updateMotion(); updateVisibility();
+    return () => {
+      clearTimers();
+      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', updateMotion);
+      else media.removeListener(updateMotion);
+      document.removeEventListener('visibilitychange', updateVisibility);
+      window.removeEventListener('pageshow', updateVisibility);
+      window.removeEventListener('focus', updateVisibility);
+    };
   }, []);
   function announce(text: string) {
+    // A real tap also repairs stale visibility state after an iOS app switch.
+    setHidden(document.hidden);
     clearTimers(); setParticles([]); setMessage(text);
     timers.current.push(setTimeout(() => setMessage(''), 3800));
   }
   function burst(event: MouseEvent<HTMLButtonElement>, text: string, effect: SoundEffect) {
     sound.play(effect);
     announce(text);
-    if (reduced || hidden) return;
+    if (document.hidden) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.detail === 0 ? rect.left + rect.width / 2 : event.clientX;
     const y = event.detail === 0 ? rect.top + rect.height / 2 : event.clientY;
-    const count = window.innerWidth < 600 ? 28 : 44;
-    setParticles(Array.from({ length: count }, (_, i) => ({ x, y, dx: (Math.random() - .5) * 380, dy: -100 - Math.random() * 240, rotation: Math.random() * 700 - 350, color: ['#7138ED', '#FF7150', '#D4F46A', '#FFD33E', '#FF9EC8'][i % 5] })));
-    timers.current.push(setTimeout(() => setParticles([]), 1100));
+    const count = reduced ? 12 : window.innerWidth < 600 ? 28 : 44;
+    setParticles(Array.from({ length: count }, (_, i) => ({
+      x: reduced ? Math.max(12, Math.min(window.innerWidth - 12, x + (Math.random() - .5) * 220)) : x,
+      y: reduced ? Math.max(12, Math.min(window.innerHeight - 12, y + (Math.random() - .5) * 140)) : y,
+      dx: reduced ? 0 : (Math.random() - .5) * 380,
+      dy: reduced ? 0 : -100 - Math.random() * 240,
+      rotation: Math.random() * 700 - 350,
+      color: ['#7138ED', '#FF7150', '#D4F46A', '#FFD33E', '#FF9EC8'][i % 5],
+    })));
+    timers.current.push(setTimeout(() => setParticles([]), reduced ? 750 : 1100));
   }
   function praise() {
     sound.play('trophy');
@@ -69,12 +90,11 @@ export default function App() {
     if (taps.current >= 3) { sound.play('bot'); setCool(true); announce('Bot lên đồ. Cùng ăn mừng nào! 🎉'); }
     else announce(taps.current === 1 ? 'Psst… chạm bot thêm 2 lần nhé!' : 'Một lần nữa. Có bất ngờ đó!');
   }
-  function playAgain() { sound.play('celebrate'); clearTimers(); setParticles([]); setMessage(''); setCool(false); taps.current = 0; setReplay(v => v + 1); }
   return <div className={`page ${hidden ? 'is-paused' : ''} ${reduced ? 'reduce-motion' : ''}`}>
-    <header className="topbar mx-auto flex items-center justify-between"><a href="#card" className="brand" aria-label="Đến thiệp chúc mừng"><span className="brand-icon">✳</span> bot có tâm<span className="brand-dot">.</span></a><span className="delivery"><span /> TIN VUI ĐÃ TỚI</span></header>
+    <header className="topbar mx-auto flex items-center justify-between"><a href="#card" className="brand" aria-label="Bot ăn mừng — đến thiệp chúc mừng"><img className="brand-mark" src={`${import.meta.env.BASE_URL}brand-mark.svg`} width="32" height="32" alt=""/><span className="brand-name">bot ăn mừng<span className="brand-dot">.</span></span></a><span className="delivery"><span /> TIN VUI ĐÃ TỚI</span></header>
     <main id="card" className="mx-auto">
       <div className="intro flex items-center justify-center gap-2"><span className="tiny-mail">✉</span> MỘT CHIẾC THIỆP DÀNH RIÊNG CHO BẠN</div>
-      <div className="card-wrap" key={replay}>
+      <div className="card-wrap">
         <div className="envelope" aria-hidden="true"><div className="envelope-flap"/><span>GỬI CHIẾN THẦN ♡</span></div>
         <article className="celebration-card">
           <div className="card-top flex items-center justify-between"><span className="status"><span>✓</span> KOC ĐÃ LÊN SHEET</span><span className="issue">THIỆP SỐ 001 ↗</span></div>
@@ -88,7 +108,6 @@ export default function App() {
         <span className="outside-star" aria-hidden="true">✳</span>
       </div>
       <section className="bot-section"><button className={`bot-button ${cool ? 'cool' : ''}`} onClick={tapBot} aria-label="Chạm bot ba lần để khám phá bất ngờ" aria-pressed={cool}><Bot cool={cool}/></button><div className="bot-note"><span className="verified">✦ ĐÃ ĐƯỢC BOT BẢO LÃNH</span><p><strong>Bot cùng bạn ăn mừng! 🎉</strong></p><span className="bot-secret">Bot có một bí mật. Thử chạm 3 lần.</span></div></section>
-      <button className="replay-button" onClick={playAgain}><span aria-hidden="true">↻</span> Chơi lại màn ăn mừng</button>
     </main>
     <footer><p>Thân ái, bot chăm chỉ của bạn 🤖</p><span>MADE WITH LOVE, A LITTLE CHAOS & A LOT OF KOC.</span></footer>
     <div className={`toast ${message ? 'visible' : ''}`} role="status" aria-live="polite" aria-atomic="true">{message}</div>
