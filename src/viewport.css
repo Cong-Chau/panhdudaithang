@@ -1,0 +1,3 @@
+/* All landing routes use one viewport. Each page must fit its own content. */
+html, body { width:100%; height:100%; margin:0; overflow:hidden; overscroll-behavior:none; }
+#root { width:100%; height:100dvh; overflow:hidden; }
