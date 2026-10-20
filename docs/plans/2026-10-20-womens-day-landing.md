@@ -326,9 +326,12 @@ Nguồn PNG có 8.195.400 byte. Bản đầu giữ đúng nguyên ảnh và ch�
 import { useMemo, type CSSProperties } from 'react';
 import type { DayEffects, Particle } from '../../hooks/useWomensDayEffects';
 
-export function Flower({ variant = 0, index = 0, color = '#F6ABC4' }: { variant?: number; index?: number; color?: string }) {
+export function Flower({ variant = 0, index = 0, color = '#F6ABC4', stemEnd }: { variant?: number; index?: number; color?: string; stemEnd?: { x: number; y: number } }) {
+  const stem = stemEnd
+    ? `M50 50Q40 100 50 122Q${stemEnd.x} ${stemEnd.y - 30} ${stemEnd.x} ${stemEnd.y}`
+    : 'M50 155Q40 100 50 50';
   return <g className="wd-flower" style={{ '--i': index } as CSSProperties}>
-    <g className="wd-grow"><path d="M50 155Q40 100 50 50" fill="none" stroke="#7B9B72" strokeWidth="5"/>
+    <g className="wd-grow"><path d={stem} fill="none" stroke="#7B9B72" strokeWidth="5" strokeLinecap="round"/>
       <g className="wd-leaf"><path d="M47 113Q12 115 18 83Q44 86 47 113" fill="#7B9B72"/></g>
       <g className="wd-leaf wd-leaf-right"><path d="M48 94Q80 96 83 64Q54 66 48 94" fill="#9BAE78"/></g>
       <g className="wd-flower-head">
@@ -389,8 +392,17 @@ export default function GiftStage({ effects: e }: { effects: DayEffects }) {
     <div className={`wd-stage-art ${e.active === 'bouquet' ? 'wd-presenting' : ''}`} key={`art-${e.run}`}>
       {e.stage === 'compliment' ? <div className={`wd-sticker ${e.active === 'compliment' ? 'wd-sticker-enter' : ''}`}><span aria-hidden="true">✦</span><strong>BOT XÁC NHẬN</strong><span aria-hidden="true">♡</span></div>
         : <svg className={`wd-bouquet ${e.stage === 'idle' ? 'wd-bud' : ''}`} viewBox="0 0 320 220" aria-hidden="true">
-          <path d="m72 94 88 112L247 94 190 203h-60Z" fill="#EFE0C6" stroke="#C6AC8E" strokeWidth="2"/>
-          {Array.from({ length: 7 }, (_, i) => <g key={i} transform={`translate(${22 + i * 33} ${Math.abs(i - 3) * 10}) scale(.65)`}><Flower index={i} variant={i} color={colors[i % 2]}/></g>)}
+          <path d="M49 87Q160 112 271 87L207 205Q160 218 113 205Z" fill="#F7EBD8" stroke="#C6AC8E" strokeWidth="2" strokeLinejoin="round"/>
+          {Array.from({ length: 7 }, (_, i) => {
+            const x = 22 + i * 33;
+            const y = Math.abs(i - 3) * 10;
+            // Convert the shared tie point into each flower's local coordinates.
+            return <g key={i} transform={`translate(${x} ${y}) scale(.65)`}>
+              <Flower index={i} variant={i} color={colors[i % 2]} stemEnd={{ x: (160 - x) / .65, y: (174 - y) / .65 }}/>
+            </g>;
+          })}
+          <path d="M54 101Q113 130 180 145L158 210L113 205Z" fill="#E8D6B8" stroke="#C6AC8E" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M266 101Q219 138 140 149L160 210L207 205Z" fill="#F4E6CE" stroke="#C6AC8E" strokeWidth="2" strokeLinejoin="round"/>
           <g className="wd-bow"><path d="M160 165Q100 124 124 181Q141 187 160 165Q220 124 195 181Q180 187 160 165" fill="#8652B8"/><path d="m155 170-11 39 17-9 17 9-12-39" fill="#8652B8"/><circle cx="160" cy="169" r="8" fill="#F6ABC4"/></g>
         </svg>}
     </div>
@@ -1136,3 +1148,5 @@ No-scroll final verification: npm run build passed (42 modules, both HTML entrie
 Final refinements: text pagination measures client/offset layout dimensions so entrance transforms do not affect fit. Sender entrance is marked consumed even when leaving its face mid-animation, preventing replay. Hidden measurement probes are aria-hidden. Screenshot: .preview/womens-day-no-scroll-mobile.png. No test runner, commit, push or deployment. Actual browser zoom 200%, OS text-size preferences and physical mobile devices remain unverified; small viewport checks are not presented as proof of those cases.
 
 Final user instruction (2026-10-20): stop the application, commit and push the current implementation. Dev process was stopped; no listeners remain on 5173, 4173 or 4175. The final aggregate commit includes the requested skills, AGENTS.md, spec/plan, 20/10 implementation and supplied image. Build already passed for unchanged source; no additional test runner or deployment. Earlier skipped-commit notes describe the previous authorization state.
+
+Bouquet SVG correction (2026-10-20): the wrapping path previously crossed itself, leaving a white gap; independent flower stems also stopped above the bow. Use a closed rear wrapper, converge the seven stems at shared SVG tie point (160,174), then paint closed front folds and bow over the stems. Preserve the viewBox, palette cycling, bloom animation and no-scroll layout. The shared Flower stemEnd parameter is optional so garden flowers retain their existing geometry. Local browser checks include paused motion matching the reported screenshot; deployed mobile behavior still needs confirmation after publication.

@@ -1,9 +1,12 @@
 import { useMemo, type CSSProperties } from 'react';
 import type { DayEffects, Particle } from '../../hooks/useWomensDayEffects';
 
-export function Flower({ variant = 0, index = 0, color = '#F6ABC4' }: { variant?: number; index?: number; color?: string }) {
+export function Flower({ variant = 0, index = 0, color = '#F6ABC4', stemEnd }: { variant?: number; index?: number; color?: string; stemEnd?: { x: number; y: number } }) {
+  const stem = stemEnd
+    ? `M50 50Q40 100 50 122Q${stemEnd.x} ${stemEnd.y - 30} ${stemEnd.x} ${stemEnd.y}`
+    : 'M50 155Q40 100 50 50';
   return <g className="wd-flower" style={{ '--i': index } as CSSProperties}>
-    <g className="wd-grow"><path d="M50 155Q40 100 50 50" fill="none" stroke="#7B9B72" strokeWidth="5"/>
+    <g className="wd-grow"><path d={stem} fill="none" stroke="#7B9B72" strokeWidth="5" strokeLinecap="round"/>
       <g className="wd-leaf"><path d="M47 113Q12 115 18 83Q44 86 47 113" fill="#7B9B72"/></g>
       <g className="wd-leaf wd-leaf-right"><path d="M48 94Q80 96 83 64Q54 66 48 94" fill="#9BAE78"/></g>
       <g className="wd-flower-head">
