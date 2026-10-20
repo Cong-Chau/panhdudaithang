@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/20-10", "destination": "/20-10/index.html" }
+  ]
+}
